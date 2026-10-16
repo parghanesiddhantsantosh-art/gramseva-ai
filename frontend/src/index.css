@@ -1,0 +1,24 @@
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  header,
+  section:first-of-type,
+  button,
+  select,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:block {
+    display: block !important;
+  }
+
+  .shadow-sm,
+  .border {
+    box-shadow: none !important;
+    border-color: #e2e8f0 !important;
+  }
+}

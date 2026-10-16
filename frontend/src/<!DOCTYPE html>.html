@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>I/O Transfers & Direct Memory Access (DMA)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+
+  :root {
+    --bg-main: #f8fafc;
+    --slide-bg: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --accent-blue: #2563eb;
+    --accent-blue-light: #eff6ff;
+    --accent-blue-border: #bfdbfe;
+    --card-bg: #f8fafc;
+    --card-border: #e2e8f0;
+    --danger-red: #ef4444;
+    --danger-light: #fef2f2;
+    --danger-border: #fecaca;
+    --success-green: #10b981;
+    --success-light: #ecfdf5;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 15px;
+    gap: 36px;
+  }
+
+  .slide-container {
+    width: 100%;
+    max-width: 1040px;
+    background: var(--slide-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide-content {
+    padding: 40px 48px 30px 48px;
+    min-height: 580px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slide-header {
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .badge-category {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-blue);
+    margin-bottom: 6px;
+  }
+
+  .slide-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+
+  .slide-num {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    flex-grow: 1;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    flex-grow: 1;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card.highlight {
+    background: var(--accent-blue-light);
+    border-color: var(--accent-blue-border);
+  }
+
+  .card.danger {
+    background: var(--danger-light);
+    border-color: var(--danger-border);
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent-blue);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card.danger .card-title {
+    color: var(--danger-red);
+  }
+
+  ul.clean-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  ul.clean-list li {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    position: relative;
+    padding-left: 18px;
+  }
+
+  ul.clean-list li::before {
+    content: "•";
+    position: absolute;
+    left: 4px;
+    top: -1px;
+    color: var(--accent-blue);
+    font-weight: bold;
+    font-size: 16px;
+  }
+
+  ul.clean-list li strong {
+    color: var(--text-primary);
+  }
+
+  .step-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .step-item {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .step-num {
+    background: var(--accent-blue);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .pipeline-banner {
+    background: var(--danger-light);
+    border: 1px solid var(--danger-border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: #991b1b;
+  }
+
+  .pipeline-node {
+    background: #ffffff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--danger-border);
+  }
+
+  .pipeline-node.bottleneck {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #dc2626;
+  }
+
+  table.styled-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    font-size: 12.5px;
+  }
+
+  table.styled-table th {
+    background: var(--text-primary);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 12px 14px;
+    text-align: left;
+  }
+
+  table.styled-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--card-border);
+    color: var(--text-secondary);
+  }
+
+  table.styled-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  table.styled-table tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  .speaker-notes-box {
+    background: #f1f5f9;
+    border-top: 1px solid var(--card-border);
+    padding: 14px 48px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .speaker-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: #e2e8f0;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+
+  .speaker-text {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  /* Presentation Actions */
+  .control-bar {
+    width: 100%;
+    max-width: 1040px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 12px 20px;
+  }
+
+  .btn {
+    background: var(--accent-blue);
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn:hover {
+    background: #1d4ed8;
+  }
+
+  @media print {
+    body {
+      background: none;
+      padding: 0;
+      gap: 0;
+    }
+    .slide-container {
+      page-break-after: always;
+      box-shadow: none;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+    }
+    .control-bar {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="control-bar">
+  <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">
+    Deck 1: I/O Transfers & Direct Memory Access (DMA) — 7 Compact Slides
+  </div>
+  <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<!-- ==================== SLIDE 1 ==================== -->
+<div class="slide-container">
+  <div class="slide-content" style="justify-content: center; gap: 24px;">
+    <div>
+      <div class="badge-category">COURSE: CE25MDM-206 • UNIT IV</div>
+      <h1 class="slide-title" style="font-size: 34px; line-height: 1.25; margin-top: 6px;">
+        Input-Output Organization &amp;<br>Direct Memory Access (DMA)
+      </h1>
+      <p style="font-size: 16px; color: var(--text-muted); margin-top: 10px; font-weight: 500;">
+        Data Transfer Techniques, Interrupt Handling, and High-Speed Bus Architecture
+      </p>
+    </div>
+
+    <div class="card highlight" style="flex-grow: 0; padding: 22px 26px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 15px; font-weight: 700; color: var(--text-primary);">
+            Presenter: [Friend's Name]
+          </div>
+          <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">
+            Department of Computer Engineering • Computer Organization and Architecture
+          </div>
+        </div>
+        <div style="background: #ffffff; border: 1px solid var(--accent-blue-border); padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--accent-blue);">
+          Total: 7 Compact Slides
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="speaker-notes-box">
+    <span class="speaker-label">Notes</span>
+    <span class="speaker-text">
+      "Good morning Ma'am and classmates. Today we are presenting Unit IV: Input-Output Organization. We will examine how processors move data to peripherals, why CPU polling creates bottlenecks, and how DMA bypasses the CPU for high-speed direct transfers."
+    </span>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 2 ==================== -->
+<div class="slide-container">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="badge-category">FOUNDATIONAL CONCEPTS</div>
+      <h2 class="slide-title">Need for I/O Interfaces &amp; Device Interconnection</h2>
+      <div class="slide-num">02 / 07</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">The Peripheral Mismatch Problem</div>
+        <ul class="clean-list">
+          <li><strong>Speed Disparity:</strong> CPUs operate at GHz frequencies, while disk drives, keyboards, and network adapters are orders of magnitude slower.</li>
+          <li><strong>Data Formats:</strong> Peripherals often stream serial bits, whereas system buses transfer 32-bit or 64-bit parallel words.</li>
+          <li><strong>Clock Domains:</strong> External devices operate on independent asynchronous clocks relative to the CPU system clock.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Core I/O Interface Registers</div>
+        <ul class="clean-list">
+          <li><strong>Data Bus Buffer:</strong> Holds data words temporarily during speed matching between the system bus and device.</li>
+          <li><strong>Status Register:</strong> Houses condition flags (<code>Busy</code>, <code>Ready</code>, <code>Error</code>, <code>Parity</code>) for CPU status queries.</li>
+          <li><strong>Control Register:</strong> Stores functional operation commands issued by the CPU (<code>Read</code>, <code>Write</code>, <code>Seek</code>).</li>
+          <li><strong>Address Decoder:</strong> Detects the unique device port address on the bus.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="speaker-notes-box">
+    <span class="speaker-label">Notes</span>
+    <span class="speaker-text">
+      "Peripherals cannot be connected directly to system buses. An I/O Interface acts as a hardware bridge that buffers speed differences, translates serial to parallel signals, and decodes addresses so the CPU can communicate reliably."
+    </span>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 3 ==================== -->
+<div class="slide-container">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="badge-category">TRANSFER METHOD 1</div>
+      <h2 class="slide-title">Program-Controlled I/O (Polling)</h2>
+      <div class="slide-num">03 / 07</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Execution Cycle (Busy-Waiting)</div>
+        <div class="step-list">
+          <div class="step-item">
+            <span class="step-num">1</span>
+            <span>CPU writes command word to interface <strong>Control Register</strong>.</span>
+          </div>
+          <div class="step-item">
+            <span class="step-num">2</span>
+            <span>Interface sets <code>Busy</code> bit; device begins physical access.</span>
+          </div>
+          <div class="step-item">
+            <span class="step-num">3</span>
+            <span><strong>Polling Loop:</strong> CPU repeatedly reads <strong>Status Register</strong> in a tight loop.</span>
+          </div>
+          <div class="step-item">
+            <span class="step-num">4</span>
+            <span>Device places byte in buffer and flags <code>Ready</code>.</span>
+          </div>
+          <div class="step-item">
+            <span class="step-num">5</span>
+            <span>CPU reads byte into register, then stores it to RAM.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card danger">
+        <div class="card-title">Major Engineering Drawbacks</div>
+        <ul class="clean-list">
+          <li><strong>Extreme CPU Wastage:</strong> High-performance cores waste millions of clock cycles executing empty test-and-branch instructions.</li>
+          <li><strong>Zero Multitasking:</strong> Operating system threads and background calculations remain completely blocked.</li>
+          <li><strong>Unpredictable Latency:</strong> Transfer time fluctuates with mechanical device readiness.</li>
+          <li><strong>Application:</strong> Restricted to simple microcontrollers or dedicated single-task boot routines.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="speaker-notes-box">
+    <span class="speaker-label">Notes</span>
+    <span class="speaker-text">
+      "Programmed I/O holds the CPU hostage in a busy-waiting loop. It repeatedly checks if the device is ready, wasting over 95% of processor clock cycles on slow peripherals."
+    </span>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 4 ==================== -->
+<div class="slide-container">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="badge-category">TRANSFER METHOD 2</div>
+      <h2 class="slide-title">Interrupt-Driven I/O &amp; Classification</h2>
+      <div class="slide-num">04 / 07</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Interrupt Servicing Cycle</div>
+        <ul class="clean-list">
+          <li><strong>Asynchronous Initiation:</strong> CPU issues command and immediately resumes user program execution.</li>
+          <li><strong>INTR Assertion:</strong> Peripheral raises an Interrupt Request (<code>INTR</code>) when ready.</li>
+          <li><strong>Context Preservation:</strong> CPU completes current instruction, pushes <strong>Program Counter (PC)</strong> and <strong>Flags (PSW)</strong> to the stack.</li>
+          <li><strong>ISR Execution:</strong> Vector table branches to <strong>Interrupt Service Routine</strong> to read/write the byte.</li>
+          <li><strong>IRET Return:</strong> Context is popped and execution resumes seamlessly.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Interrupt Types &amp; Privileges</div>
+        <ul class="clean-list">
+          <li><strong>Hardware Interrupts:</strong> Asynchronous electrical signals triggered on external CPU pins (e.g., keyboard keystrokes, disk heads).</li>
+          <li><strong>Software Interrupts (Traps):</strong> Synchronous exceptions or system calls (e.g., <code>INT 21h</code>, <code>SYSCALL</code>) requesting OS kernel routines.</li>
+          <li><strong>Privileged Instructions:</strong> Direct I/O instructions (<code>IN</code>, <code>OUT</code>) are restricted to <strong>Kernel Mode</strong> to protect hardware from user corruption.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="speaker-notes-box">
+    <span class="speaker-label">Notes</span>
+    <span class="speaker-text">
+      "Interrupts free the processor from polling. The CPU does useful work until the hardware signals an INTR pin. The CPU saves its registers on the stack, runs the ISR, and pops back to user code."
+    </span>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 5 ==================== -->
+<div class="slide-container">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="badge-category">ARCHITECTURAL BOTTLENECK</div>
+      <h2 class="slide-title">Why Interrupts Fail for Bulk Data Transfers</h2>
+      <div class="slide-num">05 / 07</div>
+    </div>
+
+    <div class="pipeline-banner">
+      <div class="pipeline-node">Peripheral Device</div>
+      <div>➔</div>
+      <div class="pipeline-node">I/O Interface</div>
+      <div>➔</div>
+      <div class="pipeline-node bottleneck">CPU Accumulator (Bottleneck)</div>
+      <div>➔</div>
+      <div class="pipeline-node">Main Memory (RAM)</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card danger">
+        <div class="card-title">Context-Switching Overhead</div>
+        <ul class="clean-list">
+          <li><strong>Per-Byte Overhead:</strong> Pushing registers, acquiring vector address, executing ISR instructions, and popping context takes 30–80+ clock cycles per byte.</li>
+          <li><strong>Interrupt Saturation:</strong> Transferring a 4 KB disk sector byte-by-byte generates 4,096 consecutive interrupts, flooding the CPU pipeline completely.</li>
+        </ul>
+      </div>
+
+      <div class="card highlight">
+        <div class="card-title">The Solution: Direct Memory Access (DMA)</div>
+        <ul class="clean-list">
+          <li><strong>Hardware Bypass:</strong> DMA offloads data movement to a dedicated coprocessor that controls system buses directly.</li>
+          <li><strong>Zero CPU Routing:</strong> Data moves directly between I/O and RAM with zero CPU register involvement during block streaming.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="speaker-notes-box">
+    <span class="speaker-label">Notes</span>
+    <span class="speaker-text">
+      "While interrupts work well for a single keystroke, routing a multi-megabyte file byte-by-byte through CPU registers creates extreme context-switch overhead. DMA eliminates this by providing a direct hardware highway between device and RAM."
+    </span>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 6 ==================== -->
+<div class="slide-container">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="badge-category">DMA ARCHITECTURE &amp; OPERATION</div>
+      <h2 class="slide-title">DMA Controller Internal Architecture &amp; Handshake</h2>
+      <div class="slide-num">06 / 07</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Internal Register Components</div>
+        <ul class="clean-list">
+          <li><strong>Memory Address Register (MAR):</strong> Holds the physical target RAM address; auto-increments after every word transferred.</li>
+          <li><strong>Word Count Register (WCR):</strong> Stores total words in the block; auto-decrements until reaching zero (<code>Terminal Count</code>).</li>
+          <li><strong>Control Register:</strong> Configures transfer direction (<code>Memory-to-I/O</code> or <code>I/O-to-Memory</code>) and transfer mode.</li>
+          <li><strong>Status Register:</strong> Holds status flags (<code>Active</code>, <code>TC reached</code>, <code>Error</code>).</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Bus Handshake &amp; Arbitration</div>
+        <ul class="clean-list">
+          <li><strong>HOLD (Bus Request):</strong> DMA asserts <code>HOLD</code> to request mastership of address, data, and control lines from CPU.</li>
+          <li><strong>HLDA (Hold Acknowledge):</strong> CPU completes current bus machine cycle, places system bus pins into high-impedance (tri-state), and grants control.</li>
+          <li><strong>Transfer Execution:</strong> DMAC places addresses directly on bus and triggers memory write/read pulses.</li>
+          <li><strong>Completion IRQ:</strong> When <code>WCR = 0</code>, DMAC interrupts CPU once to report completion.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="speaker-notes-box">
+    <span class="speaker-label">Notes</span>
+    <span class="speaker-text">
+      "The DMA controller contains an address register that increments and a word count register that decrements to zero. It uses HOLD and HLDA lines to take bus control from the CPU, writes directly to memory, and raises one single interrupt when the entire block is done."
+    </span>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 7 ==================== -->
+<div class="slide-container">
+  <div class="slide-content">
+    <div class="slide-header">
+      <div class="badge-category">SUMMARY &amp; COMPARISON</div>
+      <h2 class="slide-title">DMA Modes &amp; Comprehensive Transfer Comparison</h2>
+      <div class="slide-num">07 / 07</div>
+    </div>
+
+    <table class="styled-table" style="margin-bottom: 16px;">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Programmed I/O</th>
+          <th>Interrupt-Driven I/O</th>
+          <th>Direct Memory Access (DMA)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Data Route</strong></td>
+          <td>Device → CPU → RAM</td>
+          <td>Device → CPU → RAM</td>
+          <td><strong>Device ⟷ RAM (Direct)</strong></td>
+        </tr>
+        <tr>
+          <td><strong>CPU Overhead</strong></td>
+          <td>100% Busy-Waiting</td>
+          <td>Active during ISR execution</td>
+          <td><strong>Setup &amp; Completion IRQ only</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Transfer Rate</strong></td>
+          <td>Very Slow</td>
+          <td>Moderate (Slow for bulk)</td>
+          <td><strong>Maximum (Bus Bandwidth)</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Hardware Cost</strong></td>
+          <td>Minimal</td>
+          <td>Low (PIC controller)</td>
+          <td>Higher (Dedicated DMAC chip)</td>
+        </tr>
+        <tr>
+          <td><strong>Typical Devices</strong></td>
+          <td>Keyboards, sensors</td>
+          <td>Mice, UART ports</td>
+          <td><strong>SSDs, HDDs, Ethernet, GPUs</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card highlight" style="padding: 14px 18px;">
+      <div style="font-size: 13.5px; line-height: 1.45; color: var(--text-primary);">
+        <strong>Three DMA Modes:</strong> 
+        (1) <em>Burst Mode</em> transfers full block continuously at maximum speed; 
+        (2) <em>Cycle Stealing</em> interleaves single words during CPU internal decode cycles; 
+        (3) <em>Transparent Mode</em> operates strictly when the CPU is not using the bus.
+      </div>
+    </div>
+  </div>
+  <div class="speaker-notes-box">
+    <span class="speaker-label">Notes</span>
+    <span class="speaker-text">
+      "To conclude: Polling is simple but wastes CPU cycles; Interrupts are responsive for sporadic events; DMA is mandatory for high-bandwidth disk and network operations. Thank you, and we welcome any questions!"
+    </span>
+  </div>
+</div>
+
+</body>
+</html>
