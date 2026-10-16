@@ -65,10 +65,10 @@ The repository includes a `render.yaml` Blueprint that creates a Python API serv
 
 1. Sign in to [Render](https://render.com/) and connect your GitHub account if prompted.
 2. In the Render dashboard, choose **New** → **Blueprint**, then select `parghanesiddhantsantosh-art/gramseva-ai`.
-3. Review the two services and apply the Blueprint. Add `GEMINI_API_KEY` when prompted if you want Gemini-powered responses; without it, the backend uses its demo fallback.
+3. Review the two services and apply the Blueprint.
 4. Once both services finish deploying, open the `gramseva-frontend` URL shown in Render.
 
-The frontend receives the API hostname from the backend service through the Blueprint and uses HTTPS in production. The API URL defaults to `http://localhost:8000` for local development. On Render's free tier, the API may take a short time to wake after inactivity. Inquiry records are in memory and reset when the backend restarts.
+The frontend receives the API hostname from the backend service through the Blueprint and uses HTTPS in production. The API URL defaults to `http://localhost:8000` for local development. For Gemini-powered responses, set `GEMINI_API_KEY` in the `gramseva-api` service's environment settings; without it, the backend uses its demo fallback. On Render's free tier, the API may take a short time to wake after inactivity. Inquiry records are in memory and reset when the backend restarts.
 
 ## Frontend checks
 
