@@ -3,7 +3,9 @@ import { useState, useEffect, useRef } from 'react';
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const API_BASE_URL = configuredApiBaseUrl
   ? `${configuredApiBaseUrl.startsWith('http') ? '' : 'https://'}${configuredApiBaseUrl}`.replace(/\/+$/, '')
-  : 'http://localhost:8000';
+  : import.meta.env.DEV
+    ? 'http://localhost:8000'
+    : '';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('citizen');

@@ -2,8 +2,6 @@
 
 GramSeva AI is a multilingual, voice-first welfare scheme discovery portal and Gram Panchayat inquiry dashboard. Citizens can describe their situation in Marathi, Hindi, or English and view suggested schemes, required documents, and next steps. Panchayat officers can review and update inquiry statuses.
 
-[Deploy this project on Render](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fparghanesiddhantsantosh-art%2Fgramseva-ai)
-
 ## Features
 
 - Type a citizen query, choose a demo scenario, or dictate it using browser speech recognition.
@@ -59,16 +57,16 @@ npm run dev
 
 Open the local URL printed by Vite (typically <http://localhost:5173>). The frontend expects the backend at `http://localhost:8000`.
 
-## Deploy to Render
+## Deploy on GitHub Pages and Render
 
-The repository includes a `render.yaml` Blueprint that creates a Python API service and a static frontend. To deploy:
+The frontend is published to GitHub Pages at <https://parghanesiddhantsantosh-art.github.io/gramseva-ai/> by the workflow in `.github/workflows/deploy-pages.yml`. The FastAPI backend is hosted separately on Render. The repository must be public to use GitHub Pages on GitHub Free.
 
-1. Sign in to [Render](https://render.com/) and connect your GitHub account if prompted.
-2. In the Render dashboard, choose **New** → **Blueprint**, then select `parghanesiddhantsantosh-art/gramseva-ai`.
-3. Review the two services and apply the Blueprint.
-4. Once both services finish deploying, open the `gramseva-frontend` URL shown in Render.
+1. In [Render](https://render.com/), choose **New** → **Blueprint**, connect GitHub if prompted, and select this repository. Apply the Blueprint to create the API service.
+2. In the GitHub repository, open **Settings** → **Secrets and variables** → **Actions** → **Variables**, then create the repository variable `VITE_API_BASE_URL` with the API service's Render URL, for example `https://gramseva-api.onrender.com` (use the actual URL shown in Render).
+3. In GitHub, open **Settings** → **Pages** and set the build and deployment source to **GitHub Actions**.
+4. Run the **Deploy to GitHub Pages** workflow from the **Actions** tab, or push a change to `main`. Once it succeeds, visit <https://parghanesiddhantsantosh-art.github.io/gramseva-ai/>.
 
-The frontend receives the API hostname from the backend service through the Blueprint and uses HTTPS in production. The API URL defaults to `http://localhost:8000` for local development. For Gemini-powered responses, set `GEMINI_API_KEY` in the `gramseva-api` service's environment settings; without it, the backend uses its demo fallback. On Render's free tier, the API may take a short time to wake after inactivity. Inquiry records are in memory and reset when the backend restarts.
+The Pages build requires `VITE_API_BASE_URL` to be set, preventing a production site from accidentally calling localhost. For Gemini-powered responses, set `GEMINI_API_KEY` in the Render API service's environment settings; without it, the backend uses its demo fallback. On Render's free tier, the API may take a short time to wake after inactivity. Inquiry records are in memory and reset when the backend restarts.
 
 ## Frontend checks
 
