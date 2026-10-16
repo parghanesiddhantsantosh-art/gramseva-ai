@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = configuredApiBaseUrl
+  ? `${configuredApiBaseUrl.startsWith('http') ? '' : 'https://'}${configuredApiBaseUrl}`.replace(/\/+$/, '')
+  : 'http://localhost:8000';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('citizen');
   const [language, setLanguage] = useState('mr-IN');
@@ -60,7 +65,7 @@ export default function App() {
 
   const handleRefreshInquiries = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/admin/inquiries');
+      const res = await fetch(`${API_BASE_URL}/api/admin/inquiries`);
       if (res.ok) {
         const data = await res.json();
         setAdminInquiries(Array.isArray(data.inquiries) ? data.inquiries : []);
@@ -73,7 +78,7 @@ export default function App() {
   useEffect(() => {
     let isMounted = true;
     if (activeTab === 'admin') {
-      fetch('http://localhost:8000/api/admin/inquiries')
+      fetch(`${API_BASE_URL}/api/admin/inquiries`)
         .then((res) => (res.ok ? res.json() : Promise.reject(res)))
         .then((data) => {
           if (isMounted) {
@@ -126,7 +131,7 @@ export default function App() {
     setLoading(true);
     setErrorMessage('');
     try {
-      const res = await fetch('http://localhost:8000/api/match-schemes', {
+      const res = await fetch(`${API_BASE_URL}/api/match-schemes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -144,7 +149,7 @@ export default function App() {
       const data = await res.json();
       setResult(data);
     } catch {
-      setErrorMessage('Backend server is not reachable. Ensure FastAPI is running on http://localhost:8000');
+      setErrorMessage(`Backend server is not reachable. Check that the API is running at ${API_BASE_URL}`);
     } finally {
       setLoading(false);
     }
@@ -162,7 +167,7 @@ export default function App() {
 
   const updateStatus = async (inquiryId, newStatus) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/admin/inquiries/${inquiryId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/inquiries/${inquiryId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),

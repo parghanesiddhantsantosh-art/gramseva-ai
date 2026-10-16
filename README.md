@@ -2,6 +2,8 @@
 
 GramSeva AI is a multilingual, voice-first welfare scheme discovery portal and Gram Panchayat inquiry dashboard. Citizens can describe their situation in Marathi, Hindi, or English and view suggested schemes, required documents, and next steps. Panchayat officers can review and update inquiry statuses.
 
+[Deploy this project on Render](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fparghanesiddhantsantosh-art%2Fgramseva-ai)
+
 ## Features
 
 - Type a citizen query, choose a demo scenario, or dictate it using browser speech recognition.
@@ -56,6 +58,17 @@ npm run dev
 ```
 
 Open the local URL printed by Vite (typically <http://localhost:5173>). The frontend expects the backend at `http://localhost:8000`.
+
+## Deploy to Render
+
+The repository includes a `render.yaml` Blueprint that creates a Python API service and a static frontend. To deploy:
+
+1. Sign in to [Render](https://render.com/) and connect your GitHub account if prompted.
+2. In the Render dashboard, choose **New** → **Blueprint**, then select `parghanesiddhantsantosh-art/gramseva-ai`.
+3. Review the two services and apply the Blueprint. Add `GEMINI_API_KEY` when prompted if you want Gemini-powered responses; without it, the backend uses its demo fallback.
+4. Once both services finish deploying, open the `gramseva-frontend` URL shown in Render.
+
+The frontend receives the API hostname from the backend service through the Blueprint and uses HTTPS in production. The API URL defaults to `http://localhost:8000` for local development. On Render's free tier, the API may take a short time to wake after inactivity. Inquiry records are in memory and reset when the backend restarts.
 
 ## Frontend checks
 
